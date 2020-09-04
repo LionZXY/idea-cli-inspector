@@ -5,7 +5,7 @@
 #  as template for creatng your own, derived docker image in case i.e.
 #  you want to use the Ultimate edition or need additional build tools.
 #
-FROM        adoptopenjdk:11-jdk-hotspot
+FROM        lionzxy/gitlab-ci-emulator:latest
 MAINTAINER  Benjamin Schmid <dockerhub@benjamin-schmid.de>
 
 
@@ -98,14 +98,17 @@ ENV IDEA_HOME /srv/idea.latest
 # NOTE:
 #    This only taked effect for user root. Check home/ideainspect/.bashrc for main user
 #    environment variables
-RUN locale-gen en_US.UTF-8
-RUN update-locale en_US.UTF8
+#RUN locale-gen en_US.UTF-8
+#RUN update-locale en_US.UTF8
 ENV LANG "en_US.UTF-8"
 ENV LC_MESSAGES "C"
 
+RUN sudo mkdir /ideainspect/
 # Copy files into container
-COPY /idea-cli-inspector /
-COPY /docker-entrypoint.sh /
+COPY /idea-cli-inspector /ideainspect/
+RUN chmod +x /ideainspect/idea-cli-inspector
+
+ENV PATH "$PATH:/ideainspect/"
 
 # Bash Environments & Default IDEA config
 COPY /home /home
@@ -118,7 +121,7 @@ RUN chown -R ideainspect:ideainspect /project
 # Initial run to populate index i.e. for JDKs. This should reduce startup times.
 # NOTE: This won't run for Ultimate Edition, as a licence key is missing during execution and current docker
 #       version provide no means to inject secrets during build time. JUST COMMENT IT OUT FOR NOW IN CASE OF ISSUES
-RUN [ "/docker-entrypoint.sh", "-r", "/project" ]
+#RUN [ "docker-entrypoint", "-r", "/project" ]
 #
 #
 #  At some time this might work, by providing the idea.key as a secret during build time:
@@ -132,9 +135,8 @@ RUN [ "/docker-entrypoint.sh", "-r", "/project" ]
 #                                          -t bentolor/idea-cli-inspector .
 #
 
-# Provide an entry point script which also creates starts Bamboo with a
-# dedicated user
-ENTRYPOINT ["/docker-entrypoint.sh"]
-
 # Define default command.
-#CMD ["--help"]
+#RUN ["idea-cli-inspector", "--help"]
+#RUN idea-cli-inspector --help
+#RUN docker-entrypoint -r /project
+RUN idea-cli-inspector -r /project
